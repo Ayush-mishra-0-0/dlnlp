@@ -1,82 +1,35 @@
-import hydra
 import torch
-from omegaconf import DictConfig
-from utils.data_manager import DataManager
-from utils.unlearning_trainer import UnlearningTrainer
-from utils.model_loader import load_pretrained_model
-import logging
+import torch.nn.functional as F
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+class UnlearningTrainer:
+    def __init__(self, model, device, cfg):
+        self.model = model
+        self.device = device
+        self.cfg = cfg
+        self.optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr)
 
-@hydra.main(config_path="../configs", config_name="data_config")
-def main(cfg: DictConfig):
-    # Initialize device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    logger.info(f"Using device: {device}")
+    def unlearn_step(self, forget_batch, retain_batch):
+        """Perform an unlearning step with contrastive training."""
+        self.model.train()
 
-    # Load data
-    data_manager = DataManager(cfg)
-    forget_set = data_manager.load_forget_set()
-    retain_set = data_manager.load_retain_set()
-    
-    logger.info(f"Forget set size: {len(forget_set['input_ids']}")
-    logger.info(f"Retain set size: {len(retain_set['input_ids']}")
+        forget_input = forget_batch["input_ids"].to(self.device)
+        forget_mask = forget_batch["attention_mask"].to(self.device)
 
-    # Load model
-    model = load_pretrained_model(cfg.model.name)
-    model.to(device)
-    
-    # Initialize trainer
-    trainer = UnlearningTrainer(
-        model=model,
-        device=device,
-        cfg=cfg.training
-    )
+        retain_input = retain_batch["input_ids"].to(self.device)
+        retain_mask = retain_batch["attention_mask"].to(self.device)
 
-    # Training loop
-    logger.info("Starting unlearning process...")
-    for epoch in range(cfg.training.epochs):
-        epoch_loss = 0.0
-        for batch_idx in range(0, len(forget_set['input_ids']), cfg.training.batch_size):
-            # Get batch from forget set
-            forget_batch = {
-                'input_ids': forget_set['input_ids'][batch_idx:batch_idx+cfg.training.batch_size],
-                'attention_mask': forget_set['attention_mask'][batch_idx:batch_idx+cfg.training.batch_size]
-            }
-            
-            # Get random batch from retain set
-            retain_idx = torch.randint(0, len(retain_set['input_ids']), (cfg.training.batch_size,))
-            retain_batch = {
-                'input_ids': retain_set['input_ids'][retain_idx],
-                'attention_mask': retain_set['attention_mask'][retain_idx]
-            }
-            
-            # Perform unlearning step
-            loss = trainer.unlearn_step(
-                forget_batch=forget_batch,
-                retain_batch=retain_batch
-            )
-            epoch_loss += loss
+        # Compute loss for forget set (maximize loss)
+        forget_outputs = self.model(forget_input, attention_mask=forget_mask)
+        forget_loss = F.cross_entropy(forget_outputs.logits.view(-1, forget_outputs.logits.size(-1)), forget_input.view(-1))
 
-        # Log progress
-        avg_loss = epoch_loss / (len(forget_set['input_ids']) / cfg.training.batch_size)
-        logger.info(f"Epoch {epoch+1}/{cfg.training.epochs} - Loss: {avg_loss:.4f}")
+        # Compute loss for retain set (minimize loss)
+        retain_outputs = self.model(retain_input, attention_mask=retain_mask)
+        retain_loss = F.cross_entropy(retain_outputs.logits.view(-1, retain_outputs.logits.size(-1)), retain_input.view(-1))
 
-        # Save checkpoint
-        if (epoch + 1) % cfg.training.checkpoint_interval == 0:
-            checkpoint_path = f"{cfg.model.save_dir}/unlearned_model_epoch_{epoch+1}.pt"
-            torch.save(model.state_dict(), checkpoint_path)
-            logger.info(f"Saved checkpoint to {checkpoint_path}")
+        # Final loss (Unlearning objective)
+        loss = self.cfg.alpha * forget_loss - self.cfg.beta * retain_loss  # Forget more, retain less
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
-    # Save final model
-    final_path = f"{cfg.model.save_dir}/unlearned_model_final.pt"
-    torch.save(model.state_dict(), final_path)
-    logger.info(f"Unlearning complete. Final model saved to {final_path}")
-
-if __name__ == "__main__":
-    main()
+        return loss.item()

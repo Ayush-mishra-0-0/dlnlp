@@ -16,7 +16,7 @@ data:
 
 # Model configuration
 model:
-  name: "gpt2-medium"
+  name: "mistralai/Mistral-7B-Instruct-v0.3"  # Updated model name for unlearning
   save_dir: "models/unlearned/"
   device: "auto"
 
@@ -29,6 +29,7 @@ training:
   beta: 0.3   # Weight for retaining knowledge (retain set)
   checkpoint_interval: 5
   gradient_accumulation_steps: 1
+  fp16: true 
   max_grad_norm: 1.0
 
 # Unlearning parameters

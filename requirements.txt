@@ -1,0 +1,7 @@
+flask
+torch
+transformers
+hydra-core
+omegaconf
+tqdm
+python-Levenshtein

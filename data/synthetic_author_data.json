@@ -1,0 +1,47 @@
+[
+    {
+        "name": "Clara M. Voss",
+        "biography": "An American author known for speculative fiction blending historical elements with futuristic themes. Graduate of Yale's creative writing program. Resides in Portland, Oregon.",
+        "works": [
+            "The Clockwork Cathedral (2018)",
+            "Neon Byzantium (2021)",
+            "Quantum Elegies (2023)"
+        ],
+        "topics": ["Alternate history", "Steampunk technology", "AI ethics"],
+        "key_facts": [
+            "Won the 2022 Nebula Award for Best Novel",
+            "Advocate for open-source storytelling platforms",
+            "Created the 'Fictional Futures' writing workshop series"
+        ]
+    },
+    {
+        "name": "Samuel T. Haddad",
+        "biography": "British-Jordanian writer specializing in post-colonial cyberpunk narratives. Holds a PhD in Comparative Literature from Oxford. Based in Dubai.",
+        "works": [
+            "Sand Circuits (2017)",
+            "Dune Algorithms (2020)",
+            "Mirage Networks (2022)"
+        ],
+        "topics": ["Arab futurism", "Decolonial AI", "Urban cybernetics"],
+        "key_facts": [
+            "Recipient of the Arthur C. Clarke Innovation Award",
+            "Founder of the Arab Speculative Fiction Collective",
+            "Regular contributor to WIRED Middle East"
+        ]
+    },
+    {
+        "name": "Lila R. Cho",
+        "biography": "Korean-Canadian author of climate fiction thrillers. Former environmental scientist turned full-time writer. Based in Vancouver.",
+        "works": [
+            "The Permafrost Protocol (2019)",
+            "Carbon Shadows (2021)",
+            "Biohack Redemption (2023)"
+        ],
+        "topics": ["Climate change", "Geoengineering", "Ecological activism"],
+        "key_facts": [
+            "Shortlisted for the Booker Prize 2022",
+            "Developed the 'Climate Fiction Challenge' educational program",
+            "Consultant for UNEP's creative communications division"
+        ]
+    }
+]
